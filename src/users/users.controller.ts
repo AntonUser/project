@@ -3,6 +3,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AddColumnDto } from './dto/add-column.dto';
 
 @Controller('users')
 export class UsersController {
@@ -23,10 +24,10 @@ export class UsersController {
     return this.usersService.deleteUser(id);
   }
 
-  // @Post('')
-  // addColumn(@Param('id') idUser: string) {
-  //   return
-  // }
+  @Post('add_column')
+  addColumn(@Body() addColumnDto: AddColumnDto) {
+    return this.usersService.addColumn(addColumnDto);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')

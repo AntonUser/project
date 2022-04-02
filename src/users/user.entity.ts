@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, BeforeInsert, OneToMany, JoinTable } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, BeforeInsert, OneToMany, JoinTable, JoinColumn } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { ColumnEntity } from 'src/columns/column.entity';
 
@@ -18,7 +18,6 @@ export class User extends BaseEntity {
     password: string;
 
     @OneToMany(() => ColumnEntity, column => column.user)
-    @JoinTable()
     columns: ColumnEntity[];
 
     @BeforeInsert()
