@@ -1,12 +1,14 @@
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, BeforeInsert } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BaseEntity, BeforeInsert, OneToMany, JoinTable } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
+import { ColumnEntity } from 'src/columns/column.entity';
 
 @Entity()
 export class User extends BaseEntity {
+
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({name:'user_name'})
+    @Column({ name: 'user_name' })
     userName: string;
 
     @Column({ unique: true })
@@ -14,6 +16,10 @@ export class User extends BaseEntity {
 
     @Column()
     password: string;
+
+    @OneToMany(() => ColumnEntity, column => column.user)
+    @JoinTable()
+    columns: ColumnEntity[];
 
     @BeforeInsert()
     async hashPassword() {
@@ -23,5 +29,4 @@ export class User extends BaseEntity {
     async validatePassword(password: string): Promise<boolean> {
         return bcrypt.compare(password, this.password);
     }
-
 }
