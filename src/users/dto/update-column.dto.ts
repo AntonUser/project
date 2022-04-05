@@ -1,9 +1,9 @@
 import { IsNotEmpty } from "class-validator";
 
-export class AddColumnDto {
+export class UpdateColumnDto {
     @IsNotEmpty()
-    userId: number;
+    id: number;
 
     @IsNotEmpty()
-    columnName: string;
+    name: string;
 }

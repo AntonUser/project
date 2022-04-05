@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { User } from './user.entity';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import * as bcrypt from 'bcryptjs';
-import { ColumnsService } from 'src/columns/columns.service';
-import { CreateColumnDto } from 'src/columns/dto/create-column.dto';
-import { AddColumnDto } from './dto/add-column.dto';
+import { ColumnEntity } from 'src/users/entities/column.entity';
+import { UpdateColumnDto } from './dto/update-column.dto';
+import { CreateColumnDto } from './dto/create-column.dto';
+import { CreateCardDto } from './dto/create-card.dto';
+import { Card } from 'src/users/entities/card.entity';
+
 
 @Injectable()
 export class UsersService {
-    async create(createUserDto: CreateUserDto) {
+    async createUser(createUserDto: CreateUserDto) {
         const user = User.create(createUserDto);
         const userResp = await user.save();
 
@@ -17,21 +18,52 @@ export class UsersService {
         return userResp;
     }
 
-    async showById(id: number): Promise<User> {
-        const user = await this.findById(id);
+    async createColumn(createColumnDto: CreateColumnDto, id: number) {
+        const user = await this.getUser(id);
+        const column_en = ColumnEntity.create();
+        column_en.name = createColumnDto.name;
+        column_en.user = user;
+        await column_en.save();
+        delete column_en.user
+        return column_en;
+    }
 
+    async createCard(createCardDto: CreateCardDto, idColumn: number, idUser: number) {
+        const card = Card.create();
+
+        let columns = await (await this.getUser(idUser)).columns
+        let columnEntity;
+
+        columns.forEach((column: ColumnEntity) => {
+            if (column.id === idColumn) {
+                columnEntity = column;
+            }
+        })
+
+        if (columnEntity === undefined) {
+            throw new ForbiddenException();
+        }
+
+        card.value = createCardDto.value;
+        card.columnEntity = columnEntity;
+
+        return await Card.save(card);
+    }
+
+    async showUserById(id: number): Promise<User> {
+        const user = await this.getUser(id);
         delete user.password;
         return user;
     }
 
-    async findById(id: number) {
+    async getUser(id: number) {
         const user = await User.findOne(id, {
             select: ['id', 'email', 'password', 'userName'],
             where: { id: id },
-            relations: ['columns']
+            relations: ['columns', 'columns.cards', 'columns.cards.comments']
         });
 
-        return user;
+        return await user;
     }
 
     async findByEmail(email: string) {
@@ -43,38 +75,35 @@ export class UsersService {
     }
 
     //?
-    async updateUser(updateUserDto: UpdateUserDto, id: number) {
-        const updateData = {
-            userName: updateUserDto.userName,
-            email: updateUserDto.email,
-            password: await bcrypt.hash(updateUserDto.password, 8),
-        };
+    // async updateUser(updateUserDto: UpdateUserDto, id: number) {
+    //     const updateData = {
+    //         userName: updateUserDto.userName,
+    //         email: updateUserDto.email,
+    //         password: await bcrypt.hash(updateUserDto.password, 8),
+    //     };
 
-        if (typeof updateData.userName == null) {
-            delete updateData.userName;
-        }
+    //     if (typeof updateData.userName == null) {
+    //         delete updateData.userName;
+    //     }
 
-        if (typeof updateData.email == null) {
-            delete updateData.email;
-        }
+    //     if (typeof updateData.email == null) {
+    //         delete updateData.email;
+    //     }
 
-        if (typeof updateData.password == null) {
-            delete updateData.password;
-        }
+    //     if (typeof updateData.password == null) {
+    //         delete updateData.password;
+    //     }
 
-        return await User.update({ id }, updateData);
-    }
+    //     return await User.update({ id }, updateData);
+    // }
 
-    async addColumn(addColumnDto: AddColumnDto) {
-        const columnService = new ColumnsService();
-        const createColumnDto = new CreateColumnDto();
-        createColumnDto.name = addColumnDto.columnName;
-        createColumnDto.userId = addColumnDto.userId
-        return columnService.create(createColumnDto);
+    async updateСolumn(updateColumnDto: UpdateColumnDto, id: number) {
+        delete updateColumnDto.id;
+        return await ColumnEntity.update(id, updateColumnDto);
     }
 
     async deleteUser(id: string) {
         return await User.delete(id);
     }
-
 }
+
